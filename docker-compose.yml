@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:17
+    container_name: tickets-db
+    environment:
+      POSTGRES_DB: football_tickets
+      POSTGRES_USER: tickets
+      POSTGRES_PASSWORD: tickets_dev_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - tickets_pgdata:/var/lib/postgresql/data
+
+volumes:
+  tickets_pgdata:

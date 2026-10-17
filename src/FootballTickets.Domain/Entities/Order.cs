@@ -1,9 +1,4 @@
 ﻿using FootballTickets.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Net.Sockets;
-using System.Text;
-
 namespace FootballTickets.Domain.Entities
 {
     public class Order
