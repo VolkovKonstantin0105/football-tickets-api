@@ -1,0 +1,107 @@
+@host = http://localhost:8080
+
+### 1. Вход обычным пользователем (тестовая учетная запись, только для демо)
+# @name login
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@tickets.local",
+  "password": "User12345!"
+}
+
+### Токен пользователя для следующих запросов
+@token = {{login.response.body.$.token}}
+
+### 2. Регистрация нового пользователя
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "new.user@example.com",
+  "password": "StrongPass123!",
+  "fullName": "New User"
+}
+
+### 3. Список матчей (фильтры необязательны)
+GET {{host}}/api/matches?page=1&pageSize=10
+
+### Подставьте id матча из ответа выше
+@matchId = ВСТАВЬТЕ_ID_МАТЧА
+
+### 4. Карточка матча
+GET {{host}}/api/matches/{{matchId}}
+
+### 5. Схема мест матча (id мест нужны для покупки)
+GET {{host}}/api/matches/{{matchId}}/seats
+
+### Подставьте id двух свободных мест из ответа выше
+@seatId1 = ВСТАВЬТЕ_ID_МЕСТА_1
+@seatId2 = ВСТАВЬТЕ_ID_МЕСТА_2
+
+### 6. Купить билеты
+# @name createOrder
+POST {{host}}/api/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "matchId": "{{matchId}}",
+  "seatIds": ["{{seatId1}}", "{{seatId2}}"]
+}
+
+### Повторите запрос 6: ожидаем 409 Conflict (места уже заняты)
+
+### Id созданного заказа
+@orderId = {{createOrder.response.body.$.id}}
+
+### 7. Мои заказы
+GET {{host}}/api/orders/my
+Authorization: Bearer {{token}}
+
+### 8. Один заказ
+GET {{host}}/api/orders/{{orderId}}
+Authorization: Bearer {{token}}
+
+### 9. Отменить заказ (места освободятся и их снова можно купить)
+POST {{host}}/api/orders/{{orderId}}/cancel
+Authorization: Bearer {{token}}
+
+### 10. Вход администратором
+# @name adminLogin
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@tickets.local",
+  "password": "Admin12345!"
+}
+
+### Токен администратора
+@adminToken = {{adminLogin.response.body.$.token}}
+
+### 11. Создать матч (только Admin; подставьте реальные id команд и стадиона из БД)
+POST {{host}}/api/matches
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "homeTeamId": "ВСТАВЬТЕ_ID_КОМАНДЫ_1",
+  "awayTeamId": "ВСТАВЬТЕ_ID_КОМАНДЫ_2",
+  "stadiumId": "ВСТАВЬТЕ_ID_СТАДИОНА",
+  "startsAt": "2027-03-15T16:00:00Z",
+  "basePrice": 25
+}
+
+### 12. Проверка ролей: тот же запрос с токеном обычного пользователя должен вернуть 403
+POST {{host}}/api/matches
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "homeTeamId": "ВСТАВЬТЕ_ID_КОМАНДЫ_1",
+  "awayTeamId": "ВСТАВЬТЕ_ID_КОМАНДЫ_2",
+  "stadiumId": "ВСТАВЬТЕ_ID_СТАДИОНА",
+  "startsAt": "2027-03-15T16:00:00Z",
+  "basePrice": 25
+}
