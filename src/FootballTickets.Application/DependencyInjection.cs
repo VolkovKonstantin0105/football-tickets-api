@@ -1,7 +1,8 @@
 ﻿using FluentValidation;
-using Microsoft.Extensions.DependencyInjection;
 using FootballTickets.Application.Auth;
 using FootballTickets.Application.Matches;
+using FootballTickets.Application.Orders;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace FootballTickets.Application;
 
@@ -12,7 +13,8 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IMatchService, MatchService>();
-        // IOrderService добавим на шаге 13
+        services.AddScoped<IOrderService, OrderService>();
+        services.AddSingleton(TimeProvider.System);
         return services;
     }
 }
