@@ -1,4 +1,4 @@
-services:
+﻿services:
   db:
     image: postgres:17
     container_name: tickets-db
@@ -10,6 +10,24 @@ services:
       - "5432:5432"
     volumes:
       - tickets_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tickets -d football_tickets"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    container_name: tickets-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Default: "Host=db;Port=5432;Database=football_tickets;Username=tickets;Password=tickets_dev_pass"
+      Jwt__Key: "docker-demo-key-change-me-0123456789abcdef"
+    ports:
+      - "8080:8080"
 
 volumes:
   tickets_pgdata:
