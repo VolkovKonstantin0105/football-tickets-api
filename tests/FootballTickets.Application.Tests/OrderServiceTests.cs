@@ -3,6 +3,7 @@ using FootballTickets.Application.Orders;
 using FootballTickets.Domain.Entities;
 using FootballTickets.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
 using Match = FootballTickets.Domain.Entities.Match;
@@ -48,7 +49,7 @@ public class OrderServiceTests
         var currentUser = new Mock<ICurrentUser>();
         currentUser.Setup(u => u.UserId).Returns(userId);
         return new OrderService(db, currentUser.Object, new CreateOrderRequestValidator(),
-            new FakeTimeProvider(new DateTimeOffset(Now)));
+            new FakeTimeProvider(new DateTimeOffset(Now)), NullLogger<OrderService>.Instance);
     }
 
     [Fact]
@@ -97,7 +98,7 @@ public class OrderServiceTests
         // заказ создаем "в прошлом", когда продажа еще была возможна
         var earlier = new OrderService(db, Mock.Of<ICurrentUser>(u => u.UserId == f.UserId),
             new CreateOrderRequestValidator(),
-            new FakeTimeProvider(new DateTimeOffset(Now.AddDays(-5))));
+            new FakeTimeProvider(new DateTimeOffset(Now.AddDays(-5))), NullLogger<OrderService>.Instance);
         var order = await earlier.CreateAsync(
             new CreateOrderRequest(f.Match.Id, new() { f.VipSeat.Id }), default);
 
