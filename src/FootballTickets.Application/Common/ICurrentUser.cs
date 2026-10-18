@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace FootballTickets.Application.Common;
 
-namespace FootballTickets.Application.Common
+public interface ICurrentUser
 {
-    internal class ICurrentUser
-    {
-    }
+    Guid UserId { get; }
 }

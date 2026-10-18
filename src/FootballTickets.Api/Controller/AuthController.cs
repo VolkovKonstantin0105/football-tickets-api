@@ -1,6 +1,20 @@
-﻿namespace FootballTickets.Api.Controller
+﻿using FootballTickets.Application.Auth;
+using Microsoft.AspNetCore.Mvc;
+
+namespace FootballTickets.Api.Controllers;
+
+[ApiController]
+[Route("api/auth")]
+public class AuthController : ControllerBase
 {
-    public class AuthController
-    {
-    }
+    private readonly IAuthService _auth;
+    public AuthController(IAuthService auth) => _auth = auth;
+
+    [HttpPost("register")]
+    public async Task<ActionResult<AuthResponse>> Register(RegisterRequest request, CancellationToken ct)
+        => Ok(await _auth.RegisterAsync(request, ct));
+
+    [HttpPost("login")]
+    public async Task<ActionResult<AuthResponse>> Login(LoginRequest request, CancellationToken ct)
+        => Ok(await _auth.LoginAsync(request, ct));
 }

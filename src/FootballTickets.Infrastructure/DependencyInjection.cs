@@ -16,6 +16,7 @@ public static class DependencyInjection
             o.UseNpgsql(config.GetConnectionString("Default")));
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
         services.AddSingleton<IPasswordService, PasswordService>();
+        services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
         return services;
     }
 }

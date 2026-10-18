@@ -4,7 +4,5 @@ using System.Text;
 
 namespace FootballTickets.Application.Auth
 {
-    internal class AuthResponce
-    {
-    }
+    public record AuthResponse(string Token);
 }

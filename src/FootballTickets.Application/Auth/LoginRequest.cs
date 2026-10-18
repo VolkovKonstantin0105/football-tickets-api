@@ -4,7 +4,5 @@ using System.Text;
 
 namespace FootballTickets.Application.Auth
 {
-    internal class LoginRequest
-    {
-    }
+    public record LoginRequest(string Email, string Password);
 }

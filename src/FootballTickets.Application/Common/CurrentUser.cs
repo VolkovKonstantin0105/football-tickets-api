@@ -1,10 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using FootballTickets.Application.Common;
+using Microsoft.AspNetCore.Http;
 
-namespace FootballTickets.Application.Common
+namespace FootballTickets.Api.Services;
+
+public class CurrentUser : ICurrentUser
 {
-    internal class CurrentUser
+    private readonly IHttpContextAccessor _http;
+    public CurrentUser(IHttpContextAccessor http) => _http = http;
+
+    public Guid UserId
     {
+        get
+        {
+            var sub = _http.HttpContext?.User.FindFirst("sub")?.Value;
+            return Guid.TryParse(sub, out var id)
+                ? id
+                : throw new UnauthorizedException("Not authenticated");
+        }
     }
 }
