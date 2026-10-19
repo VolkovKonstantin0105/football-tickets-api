@@ -4,6 +4,7 @@
     <Project Path="src/FootballTickets.Application/FootballTickets.Application.csproj" />
     <Project Path="src/FootballTickets.Domain/FootballTickets.Domain.csproj" />
     <Project Path="src/FootballTickets.Infrastructure/FootballTickets.Infrastructure.csproj" />
+    <Project Path="src/FootballTickets.Web/FootballTickets.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/FootballTickets.Api.IntegrationTests/FootballTickets.Api.IntegrationTests.csproj" />

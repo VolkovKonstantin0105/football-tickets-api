@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.13" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.13" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -21,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\FootballTickets.Application\FootballTickets.Application.csproj" />
     <ProjectReference Include="..\FootballTickets.Infrastructure\FootballTickets.Infrastructure.csproj" />
+    <ProjectReference Include="..\FootballTickets.Web\FootballTickets.Web.csproj" />
   </ItemGroup>
 
 </Project>

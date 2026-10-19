@@ -54,8 +54,12 @@ builder.Services.AddAuthorization();
 var app = builder.Build();
 
 app.UseExceptionHandler();
-
 app.UseSerilogRequestLogging();
+
+//создание клиента
+app.UseBlazorFrameworkFiles();
+app.UseStaticFiles();
+
 
 if (app.Environment.IsDevelopment())
 {
@@ -72,6 +76,12 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+//создание клиента
+app.MapControllers();
+app.MapFallback("/api/{**rest}", () => Results.NotFound());
+app.MapFallbackToFile("index.html");
+
 
 app.MapControllers();
 

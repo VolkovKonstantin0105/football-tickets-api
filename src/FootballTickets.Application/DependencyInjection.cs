@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using FootballTickets.Application.Auth;
+using FootballTickets.Application.Catalog;
 using FootballTickets.Application.Matches;
 using FootballTickets.Application.Orders;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +16,7 @@ public static class DependencyInjection
         services.AddScoped<IMatchService, MatchService>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddSingleton(TimeProvider.System);
+        services.AddScoped<ICatalogService, CatalogService>();
         return services;
     }
 }
