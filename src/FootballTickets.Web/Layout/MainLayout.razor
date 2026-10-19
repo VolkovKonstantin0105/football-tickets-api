@@ -1,3 +1,52 @@
 ﻿@inherits LayoutComponentBase
+@inject AuthService Auth
+@inject NavigationManager Nav
 
-@Body
+<nav class="navbar navbar-expand navbar-dark bg-dark px-3">
+    <a class="navbar-brand" href="">Football Tickets</a>
+
+    <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">Матчи</NavLink>
+        </li>
+        <AuthorizeView>
+            <li class="nav-item">
+                <NavLink class="nav-link" href="orders">Мои заказы</NavLink>
+            </li>
+        </AuthorizeView>
+        <AuthorizeView Roles="Admin">
+            <li class="nav-item">
+                <NavLink class="nav-link" href="admin">Админка</NavLink>
+            </li>
+        </AuthorizeView>
+    </ul>
+
+    <AuthorizeView>
+        <Authorized>
+            <span class="navbar-text me-3">@context.User.Identity?.Name</span>
+            <button class="btn btn-outline-light btn-sm" @onclick="LogoutAsync">Выйти</button>
+        </Authorized>
+        <NotAuthorized>
+            <a class="btn btn-outline-light btn-sm me-2" href="login">Войти</a>
+            <a class="btn btn-primary btn-sm" href="register">Регистрация</a>
+        </NotAuthorized>
+    </AuthorizeView>
+</nav>
+
+<main class="container py-4">
+    @Body
+</main>
+
+<div id="blazor-error-ui" data-nosnippet>
+    Произошла непредвиденная ошибка.
+    <a href="" class="reload">Обновить</a>
+    <span class="dismiss">x</span>
+</div>
+
+@code {
+    private async Task LogoutAsync()
+    {
+        await Auth.LogoutAsync();
+        Nav.NavigateTo("");
+    }
+}

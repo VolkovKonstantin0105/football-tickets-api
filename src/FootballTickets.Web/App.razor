@@ -1,6 +1,21 @@
-﻿<Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
-    <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-    </Found>
-</Router>
+﻿<CascadingAuthenticationState>
+    <Router AppAssembly="typeof(App).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)">
+                <NotAuthorized>
+                    <div class="alert alert-warning mt-4">
+                        Для этой страницы нужно <a href="login">войти в аккаунт</a>
+                        (или у вас не хватает прав).
+                    </div>
+                </NotAuthorized>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <PageTitle>Не найдено</PageTitle>
+            <LayoutView Layout="typeof(MainLayout)">
+                <p class="mt-4">Такой страницы нет. <a href="">На главную</a></p>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>

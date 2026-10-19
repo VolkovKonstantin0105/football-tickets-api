@@ -1,0 +1,14 @@
+﻿@inject IJSRuntime JS
+
+<span>@text</span>
+
+@code {
+    [Parameter] public DateTime Value { get; set; }
+    private string text = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var iso = DateTime.SpecifyKind(Value, DateTimeKind.Utc).ToString("o");
+        text = await JS.InvokeAsync<string>("formatLocal", iso);
+    }
+}
