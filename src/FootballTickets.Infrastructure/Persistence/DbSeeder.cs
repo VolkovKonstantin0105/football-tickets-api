@@ -7,7 +7,7 @@ namespace FootballTickets.Infrastructure.Persistence;
 
 public static class DbSeeder
 {
-    public static async Task SeedAsync(AppDbContext db, IPasswordService passwords)
+    public static async Task SeedAsync(AppDbContext db, IPasswordService passwords, bool includeDemoUsers)
     {
         if (await db.Teams.AnyAsync()) return;
 
@@ -71,26 +71,47 @@ public static class DbSeeder
                 BasePrice = 15m
             });
 
-        db.Users.AddRange(
-            new User
-            {
-                Id = Guid.NewGuid(),
-                Email = "admin@tickets.local",
-                FullName = "Admin",
-                Role = UserRole.Admin,
-                PasswordHash = passwords.Hash("Admin12345!"),
-                CreatedAt = DateTime.UtcNow
-            },
-            new User
-            {
-                Id = Guid.NewGuid(),
-                Email = "user@tickets.local",
-                FullName = "Test User",
-                Role = UserRole.User,
-                PasswordHash = passwords.Hash("User12345!"),
-                CreatedAt = DateTime.UtcNow
-            });
+        if (includeDemoUsers)
+        {
+            db.Users.AddRange(
+                new User
+                {
+                    Id = Guid.NewGuid(),
+                    Email = "admin@tickets.local",
+                    FullName = "Admin",
+                    Role = UserRole.Admin,
+                    PasswordHash = passwords.Hash("Admin12345!"),
+                    CreatedAt = DateTime.UtcNow
+                },
+                new User
+                {
+                    Id = Guid.NewGuid(),
+                    Email = "user@tickets.local",
+                    FullName = "Test User",
+                    Role = UserRole.User,
+                    PasswordHash = passwords.Hash("User12345!"),
+                    CreatedAt = DateTime.UtcNow
+                });
+        }
 
+        await db.SaveChangesAsync();
+    }
+
+    public static async Task EnsureAdminAsync(
+        AppDbContext db, IPasswordService passwords, string email, string password)
+    {
+        var normalized = email.Trim().ToLowerInvariant();
+        if (await db.Users.AnyAsync(u => u.Email == normalized)) return;
+
+        db.Users.Add(new User
+        {
+            Id = Guid.NewGuid(),
+            Email = normalized,
+            FullName = "Administrator",
+            Role = UserRole.Admin,
+            PasswordHash = passwords.Hash(password),
+            CreatedAt = DateTime.UtcNow
+        });
         await db.SaveChangesAsync();
     }
 }

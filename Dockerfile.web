@@ -1,0 +1,7 @@
+﻿FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY src/FootballTickets.Web/ src/FootballTickets.Web/
+RUN dotnet publish src/FootballTickets.Web/FootballTickets.Web.csproj -c Release -o /out
+
+FROM caddy:2
+COPY --from=build /out/wwwroot /srv

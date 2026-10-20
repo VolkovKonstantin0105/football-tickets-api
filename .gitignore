@@ -21,4 +21,5 @@ bld/
 
 # Test results
 [Tt]est[Rr]esult*/
-*.trx
+*.trx.env
+.env

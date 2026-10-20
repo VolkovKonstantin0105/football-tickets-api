@@ -1,11 +1,14 @@
 ﻿using FootballTickets.Application.Auth;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace FootballTickets.Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
+[EnableRateLimiting("auth")]
 public class AuthController : ControllerBase
+
 {
     private readonly IAuthService _auth;
     public AuthController(IAuthService auth) => _auth = auth;

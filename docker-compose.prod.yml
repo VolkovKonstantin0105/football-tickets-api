@@ -1,0 +1,54 @@
+﻿services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: football_tickets
+      POSTGRES_USER: tickets
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD в .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tickets -d football_tickets"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: "Host=db;Port=5432;Database=football_tickets;Username=tickets;Password=${POSTGRES_PASSWORD}"
+      Jwt__Key: ${JWT_KEY:?задайте JWT_KEY в .env}
+      Database__MigrateOnStartup: "true"
+      Database__SeedCatalog: "true"
+      Database__SeedDemoUsers: "false"
+      Admin__Email: ${ADMIN_EMAIL:?задайте ADMIN_EMAIL в .env}
+      Admin__Password: ${ADMIN_PASSWORD:?задайте ADMIN_PASSWORD в .env}
+
+  caddy:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      DOMAIN: ${DOMAIN:?задайте DOMAIN в .env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
