@@ -1,0 +1,142 @@
+﻿@page "/match/{Id:guid}"
+@inject ApiClient Api
+@inject NavigationManager Nav
+
+<PageTitle>Выбор мест</PageTitle>
+
+@if (error is not null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+@if (match is null)
+{
+    @if (error is null)
+    {
+        <p>Загрузка...</p>
+    }
+}
+else
+{
+    <h1>@match.HomeTeam.Name - @match.AwayTeam.Name</h1>
+    <p class="text-muted">@match.Stadium, <LocalTime Value="match.StartsAt" /></p>
+
+    <div class="mb-3 small">
+        <span class="seat free seat-legend"></span> свободно
+        <span class="seat selected seat-legend ms-3"></span> выбрано
+        <span class="seat taken seat-legend ms-3"></span> занято
+    </div>
+
+    <div class="pitch text-center mb-4">ПОЛЕ</div>
+
+    @foreach (var sector in sectors)
+    {
+        <div class="mb-4">
+            <h5>Сектор @sector.Sector, @PriceText(sector) за место</h5>
+            @foreach (var row in sector.Seats.GroupBy(s => s.Row))
+            {
+                <div class="seat-row">
+                    <span class="row-label">@row.Key</span>
+                    @foreach (var seat in row)
+                    {
+                        <button type="button"
+                                class="seat @SeatClass(seat)"
+                                disabled="@seat.IsTaken"
+                                title="Ряд @seat.Row, место @seat.Number, @seat.Price.ToString("0.##")"
+                                @onclick="() => Toggle(seat)">
+                            @seat.Number
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <div>
+                Выбрано: <strong>@selected.Count</strong> из @MaxSeats,
+                сумма: <strong>@Total.ToString("0.##")</strong>
+            </div>
+            <AuthorizeView>
+                <Authorized>
+                    <button class="btn btn-success"
+                            disabled="@(selected.Count == 0 || busy)"
+                            @onclick="BuyAsync">
+                        Купить
+                    </button>
+                </Authorized>
+                <NotAuthorized>
+                    <a href="login" class="btn btn-outline-primary">Войдите, чтобы купить</a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+}
+
+@code {
+    private const int MaxSeats = 6;
+
+    [Parameter] public Guid Id { get; set; }
+
+    private MatchDto? match;
+    private List<SectorSeatsDto> sectors = new();
+    private readonly Dictionary<Guid, SeatDto> selected = new();
+    private string? error;
+    private bool busy;
+
+    private decimal Total => selected.Values.Sum(s => s.Price);
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            match = await Api.GetMatchAsync(Id);
+            sectors = await Api.GetSeatsAsync(Id) ?? new();
+            selected.Clear();
+        }
+        catch (Exception)
+        {
+            error = "Не удалось загрузить матч. Возможно, его уже нет.";
+        }
+    }
+
+    private static string PriceText(SectorSeatsDto sector) =>
+        sector.Seats.FirstOrDefault()?.Price.ToString("0.##") ?? "-";
+
+    private string SeatClass(SeatDto seat) =>
+        seat.IsTaken ? "taken" : selected.ContainsKey(seat.Id) ? "selected" : "free";
+
+    private void Toggle(SeatDto seat)
+    {
+        if (selected.Remove(seat.Id)) return;
+
+        if (selected.Count >= MaxSeats)
+        {
+            error = $"Не больше {MaxSeats} мест в одном заказе";
+            return;
+        }
+
+        error = null;
+        selected[seat.Id] = seat;
+    }
+
+    private async Task BuyAsync()
+    {
+        busy = true;
+        error = null;
+        var err = await Api.CreateOrderAsync(Id, selected.Keys.ToList());
+        busy = false;
+
+        if (err is not null)
+        {
+            error = err;
+            await LoadAsync(); // схема могла измениться: кто-то успел занять место
+            return;
+        }
+
+        Nav.NavigateTo("orders");
+    }
+}

@@ -1,0 +1,55 @@
+﻿@page "/register"
+@inject AuthService Auth
+@inject NavigationManager Nav
+
+<PageTitle>Регистрация</PageTitle>
+
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <h1 class="h3 mb-3">Регистрация</h1>
+
+        @if (error is not null)
+        {
+            <div class="alert alert-danger" style="white-space: pre-line">@error</div>
+        }
+
+        <EditForm Model="model" OnValidSubmit="SubmitAsync">
+            <div class="mb-3">
+                <label class="form-label">Имя</label>
+                <InputText class="form-control" @bind-Value="model.FullName" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <InputText class="form-control" @bind-Value="model.Email" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Пароль</label>
+                <InputText type="password" class="form-control" @bind-Value="model.Password" />
+                <div class="form-text">Не короче 8 символов</div>
+            </div>
+            <button class="btn btn-primary" disabled="@busy">Создать аккаунт</button>
+            <a class="ms-3" href="login">Уже есть аккаунт?</a>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private readonly RegisterModel model = new();
+    private string? error;
+    private bool busy;
+
+    private async Task SubmitAsync()
+    {
+        busy = true;
+        error = await Auth.RegisterAsync(model.Email, model.Password, model.FullName);
+        busy = false;
+        if (error is null) Nav.NavigateTo("");
+    }
+
+    private class RegisterModel
+    {
+        public string FullName { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
+}

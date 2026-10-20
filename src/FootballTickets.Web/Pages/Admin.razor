@@ -1,0 +1,174 @@
+﻿@page "/admin"
+@attribute [Authorize(Roles = "Admin")]
+@using System.Globalization
+@inject ApiClient Api
+@inject IJSRuntime JS
+
+<PageTitle>Админка</PageTitle>
+
+<h1 class="mb-4">Админка</h1>
+
+@if (message is not null)
+{
+    <div class="alert alert-success">@message</div>
+}
+@if (error is not null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h2 class="h5 mb-3">Новый матч</h2>
+        <EditForm Model="form" OnValidSubmit="CreateAsync">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Хозяева</label>
+                    <InputSelect class="form-select" @bind-Value="form.HomeTeamId">
+                        <option value="@Guid.Empty">Выберите...</option>
+                        @foreach (var team in teams)
+                        {
+                            <option value="@team.Id">@team.Name</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Гости</label>
+                    <InputSelect class="form-select" @bind-Value="form.AwayTeamId">
+                        <option value="@Guid.Empty">Выберите...</option>
+                        @foreach (var team in teams)
+                        {
+                            <option value="@team.Id">@team.Name</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Стадион</label>
+                    <InputSelect class="form-select" @bind-Value="form.StadiumId">
+                        <option value="@Guid.Empty">Выберите...</option>
+                        @foreach (var stadium in stadiums)
+                        {
+                            <option value="@stadium.Id">@stadium.Name</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Базовая цена</label>
+                    <InputNumber class="form-control" @bind-Value="form.BasePrice" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Начало (ваше время)</label>
+                    <input type="datetime-local" class="form-control" @bind="startsAtText" />
+                </div>
+            </div>
+            <button class="btn btn-primary mt-3">Создать матч</button>
+        </EditForm>
+    </div>
+</div>
+
+<h2 class="h5">Ближайшие матчи</h2>
+<table class="table align-middle">
+    <thead>
+        <tr><th>Матч</th><th>Когда</th><th></th></tr>
+    </thead>
+    <tbody>
+        @foreach (var match in matches)
+        {
+            <tr>
+                <td>@match.HomeTeam.Name - @match.AwayTeam.Name</td>
+                <td><LocalTime Value="match.StartsAt" /></td>
+                <td class="text-end">
+                    <button class="btn btn-outline-danger btn-sm"
+                            @onclick="() => DeleteAsync(match)">
+                        Удалить
+                    </button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<TeamDto> teams = new();
+    private List<StadiumDto> stadiums = new();
+    private List<MatchDto> matches = new();
+    private readonly MatchForm form = new();
+    private string startsAtText = "";
+    private string? message;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            teams = await Api.GetTeamsAsync() ?? new();
+            stadiums = await Api.GetStadiumsAsync() ?? new();
+            await LoadMatchesAsync();
+        }
+        catch (Exception)
+        {
+            error = "Не удалось загрузить данные.";
+        }
+    }
+
+    private async Task LoadMatchesAsync() =>
+        matches = (await Api.GetMatchesAsync(1, null))?.Items ?? new();
+
+    private async Task CreateAsync()
+    {
+        message = null;
+        error = null;
+
+        if (form.HomeTeamId == Guid.Empty || form.AwayTeamId == Guid.Empty || form.StadiumId == Guid.Empty)
+        {
+            error = "Выберите обе команды и стадион";
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(startsAtText))
+        {
+            error = "Укажите дату и время начала";
+            return;
+        }
+
+        // поле datetime-local дает локальное время браузера, переводим в UTC через JavaScript
+        var iso = await JS.InvokeAsync<string>("localInputToIso", startsAtText);
+        var startsAt = DateTime.Parse(iso, CultureInfo.InvariantCulture,
+            DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal);
+
+        var err = await Api.CreateMatchAsync(new CreateMatchRequest(
+            form.HomeTeamId, form.AwayTeamId, form.StadiumId, startsAt, form.BasePrice));
+        if (err is not null)
+        {
+            error = err;
+            return;
+        }
+
+        message = "Матч создан";
+        await LoadMatchesAsync();
+    }
+
+    private async Task DeleteAsync(MatchDto match)
+    {
+        if (!await JS.InvokeAsync<bool>("confirmAction", "Удалить матч?")) return;
+
+        message = null;
+        error = null;
+        var err = await Api.DeleteMatchAsync(match.Id);
+        if (err is not null)
+        {
+            error = err;
+            return;
+        }
+
+        message = "Матч удален";
+        await LoadMatchesAsync();
+    }
+
+    private class MatchForm
+    {
+        public Guid HomeTeamId { get; set; }
+        public Guid AwayTeamId { get; set; }
+        public Guid StadiumId { get; set; }
+        public decimal BasePrice { get; set; } = 20;
+    }
+}

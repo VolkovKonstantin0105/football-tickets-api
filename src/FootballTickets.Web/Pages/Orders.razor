@@ -1,0 +1,105 @@
+﻿@page "/orders"
+@attribute [Authorize]
+@inject ApiClient Api
+@inject IJSRuntime JS
+
+<PageTitle>Мои заказы</PageTitle>
+
+<h1 class="mb-4">Мои заказы</h1>
+
+@if (message is not null)
+{
+    <div class="alert alert-success">@message</div>
+}
+@if (error is not null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+@if (orders is null)
+{
+    @if (error is null)
+    {
+        <p>Загрузка...</p>
+    }
+}
+else if (orders.Count == 0)
+{
+    <p class="text-muted">Заказов пока нет. <a href="">Выбрать матч</a></p>
+}
+else
+{
+    @foreach (var order in orders)
+    {
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>@order.Match</strong>,
+                    <LocalTime Value="order.MatchStartsAt" />
+                </div>
+                <span class="badge @BadgeClass(order)">@StatusText(order)</span>
+            </div>
+            <ul class="list-group list-group-flush">
+                @foreach (var ticket in order.Tickets)
+                {
+                    <li class="list-group-item @TicketClass(ticket)">
+                        Сектор @ticket.Sector, ряд @ticket.Row, место @ticket.Number,
+                        @ticket.Price.ToString("0.##")
+                    </li>
+                }
+            </ul>
+            <div class="card-footer d-flex justify-content-between align-items-center">
+                <span>Итого: <strong>@order.TotalAmount.ToString("0.##")</strong></span>
+                @if (order.Status == "Paid")
+                {
+                    <button class="btn btn-outline-danger btn-sm"
+                            @onclick="() => CancelAsync(order)">
+                        Отменить заказ
+                    </button>
+                }
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private List<OrderDto>? orders;
+    private string? message;
+    private string? error;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            orders = await Api.GetMyOrdersAsync() ?? new();
+        }
+        catch (Exception)
+        {
+            error = "Не удалось загрузить заказы. Попробуйте войти заново.";
+        }
+    }
+
+    private async Task CancelAsync(OrderDto order)
+    {
+        if (!await JS.InvokeAsync<bool>("confirmAction", "Отменить заказ?")) return;
+
+        message = null;
+        error = null;
+        var err = await Api.CancelOrderAsync(order.Id);
+        if (err is not null)
+        {
+            error = err;
+            return;
+        }
+
+        message = "Заказ отменен, места снова доступны для продажи.";
+        await LoadAsync();
+    }
+
+    private static string StatusText(OrderDto o) => o.Status == "Paid" ? "Оплачен" : "Отменен";
+    private static string BadgeClass(OrderDto o) => o.Status == "Paid" ? "bg-success" : "bg-secondary";
+    private static string TicketClass(TicketDto t) =>
+        t.IsCancelled ? "text-decoration-line-through text-muted" : "";
+}
